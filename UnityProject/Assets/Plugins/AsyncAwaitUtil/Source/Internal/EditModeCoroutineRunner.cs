@@ -33,13 +33,10 @@ namespace UnityAsyncAwaitUtil
         }
 
         private List<IEnumerator> _coroutines;
-        private List<IEnumerator> _coroutinesNext;
 
         private EditModeCoroutineRunner()
         {
             _coroutines = new List<IEnumerator>();
-            _coroutinesNext = new List<IEnumerator>();
-
             EditorApplication.update += Update;
         }
 
@@ -49,64 +46,34 @@ namespace UnityAsyncAwaitUtil
             // we can safely use `coroutine.Current` in `Update`.
             if (coroutine.MoveNext())
             {
-                Debug.Log("_coroutines.Add(coroutine)");
                 _coroutines.Add(coroutine);
             }
         }
 
         private void Update()
         {
-            // Accumulates list of coroutines that 
-            // haven't completed in this `Update`.
-            // (Using a second temporary list avoids the
-            // trickiness of removing items from `_coroutines`
-            // while iterating through `_coroutines`.)
-            _coroutinesNext.Clear();
+            // Loop in reverse order so that we can remove
+            // completed coroutines while iterating.
 
-            foreach (var coroutine in _coroutines)
+            for (int i = _coroutines.Count - 1; i >= 0; i--)
             {
-                // object returned by current `yield return` statement 
-                var yieldInstruction = coroutine.Current;
+                // object returned by `yield return`
 
-                if (yieldInstruction == null)
-                    Debug.Log("yieldInstruction == null");
-                else
-                    Debug.LogFormat("yieldInstruction.GetType().ToString(): {0}",
-                        yieldInstruction.GetType().ToString());
+                var yieldInstruction = _coroutines[i].Current;
 
-                // Notes:
-                //
-                // (1) `yield return null` and
-                // `yield return new WaitForUpdate()` simply suspend
-                // coroutine execution until the next `Update`.
-                //
-                // (2) `WaitForEndOfFrame`/`WaitForFixedUpdate`
-                // lose their meaning in Edit Mode, but 
-                // treating them like `null`/`WaitForUpdate`
-                // improves the reusability of coroutines across
-                // Play Mode and Edit Mode.
+                // `WaitForSeconds` and `WaitForSecondsRealtime`
+                // have unpredictable behaviour in Edit Mode and are
+                // therefore forbidden.
 
-                if (yieldInstruction == null
-                    || yieldInstruction is WaitForUpdate
-                    || yieldInstruction is WaitForEndOfFrame
-                    || yieldInstruction is WaitForFixedUpdate)
+                if (IEnumeratorAwaitExtensions.IllegalInstruction(
+                    yieldInstruction))
                 {
-                    if (coroutine.MoveNext())
-                        _coroutinesNext.Add(coroutine);
-                    continue;
-                }
+                    Debug.LogErrorFormat(string.Format(
+                        "{0} is not supported in Edit Mode",
+                        yieldInstruction.GetType().ToString()));
 
-                // Examples of `CustomYieldInstruction`:
-                // `WaitUntil`, `WaitWhile`, `WaitForSecondsRealtime`.
+                    _coroutines.RemoveAt(i);
 
-                CustomYieldInstruction customYieldInstruction
-                    = yieldInstruction as CustomYieldInstruction;
-                Debug.LogFormat("Time.realtimeSinceStartup: {0}", Time.realtimeSinceStartup);
-                Debug.LogFormat("customYieldInstruction != null: {0}", customYieldInstruction != null);
-                if (customYieldInstruction != null)
-                {
-                    if (customYieldInstruction.MoveNext())
-                        _coroutinesNext.Add(coroutine);
                     continue;
                 }
 
@@ -118,32 +85,17 @@ namespace UnityAsyncAwaitUtil
                     = yieldInstruction as AsyncOperation;
                 if (asyncOperation != null)
                 {
-                    if (!asyncOperation.isDone)
-                        _coroutinesNext.Add(coroutine);
+                    if (asyncOperation.isDone)
+                        _coroutines.RemoveAt(i);
                     continue;
                 }
 
-                // Unfortunately, `WaitForSeconds` doesn't expose any public
-                // fields/properties/methods that allow us to easily emulate it
-                // in Edit Mode.
-                //
-                // It might be possible to emulate `WaitForSeconds` in a
-                // reasonable way using reflection, but for now we will
-                // recommend using `WaitForSecondsRealtime` instead.
+                // Default case: `yield return` is `null` or is a type with no
+                // special Unity-defined behaviour.
 
-                if (yieldInstruction is WaitForSeconds)
-                {
-                    throw new NotSupportedException(
-                        "AsyncAwaitUtil: "
-                        + "WaitForSeconds() is not supported in Edit Mode. "
-                        + "Consider using WaitforSecondsRealtime() instead.");
-                }
-
+                if (!_coroutines[i].MoveNext())
+                    _coroutines.RemoveAt(i);
             }
-
-            // copy over coroutines that are not yet complete
-            List<IEnumerator> tmp;
-            _coroutines = _coroutinesNext;
         }
     }
 }
