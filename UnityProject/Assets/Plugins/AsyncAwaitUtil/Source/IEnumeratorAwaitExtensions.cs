@@ -231,6 +231,26 @@ public static class IEnumeratorAwaitExtensions
         }
     }
 
+    /// <summary>
+    /// Return true if the given yield instruction (i.e. an
+    /// object returned by a `yield return`) is forbidden
+    /// in the current mode (Play Mode or Edit Mode).
+    ///
+    /// I added this check to prohibit use of `WaitForSeconds` and
+    /// `WaitForSecondsRealtime` in Edit Mode, since those
+    /// classes behave unpredictably in Edit Mode.
+    /// </summary>
+    public static bool IllegalInstruction(object yieldInstruction)
+    {
+        if (!Application.isPlaying && (yieldInstruction is WaitForSeconds
+           || yieldInstruction is WaitForSecondsRealtime))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
     class CoroutineWrapper<T>
     {
         readonly SimpleCoroutineAwaiter<T> _awaiter;
@@ -255,6 +275,14 @@ public static class IEnumeratorAwaitExtensions
                 try
                 {
                     isDone = !topWorker.MoveNext();
+
+                    if (!isDone && IllegalInstruction(topWorker.Current))
+                    {
+                        throw new NotSupportedException(string.Format(
+                            "{0} is not supported in {1} Mode",
+                            topWorker.Current.GetType().ToString(),
+                            Application.isPlaying ? "Play" : "Edit"));
+                    }
                 }
                 catch (Exception e)
                 {
