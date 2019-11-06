@@ -112,7 +112,7 @@ namespace UnityAsyncAwaitUtil
             // `git log --follow --patch -- Runtimetime/Export/Scripting/WaitForSecondsRealtime.cs`
 
 #if UNITY_2018_3_OR_NEWER
-            return waitForSecondsRealtime.waitTime;
+            return waitObj.waitTime;
 #else
             FieldInfo field = waitObj.GetType()
                 .GetField("waitTime", BindingFlags.Instance
