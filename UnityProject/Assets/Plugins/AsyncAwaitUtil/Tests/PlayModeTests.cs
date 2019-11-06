@@ -19,7 +19,6 @@ namespace UnityAsyncAwaitUtil
         {
             _buttonHandler.Restart();
 
-            // temporarily disabled so that I can ignore compile errors
             if (_buttonHandler.Display("Test await seconds"))
             {
                 AsyncUtilTests.RunAwaitSecondsTestAsync().WrapErrors();
