@@ -198,7 +198,7 @@ namespace UnityAsyncAwaitUtil
                     = yieldInstruction as AsyncOperation;
                 if (asyncOperation != null)
                 {
-                    if (asyncOperation.isDone)
+                    if (asyncOperation.isDone && !_coroutines[i].MoveNext())
                     {
                         _coroutines.RemoveAt(i);
                         _waitTimers.RemoveAt(i);
