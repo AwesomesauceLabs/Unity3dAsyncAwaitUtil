@@ -190,6 +190,24 @@ namespace UnityAsyncAwaitUtil
                     continue;
                 }
 
+                // `CustomYieldInstruction`s provide an
+                // `IEnumerator` interface.
+                //  
+                // Examples of `CustomYieldInstruction`:
+                // `WaitUntil`, `WaitWhile`, `WWW`.
+
+                IEnumerator enumerator = yieldInstruction as IEnumerator;
+                if (enumerator != null)
+                {
+                    if (!enumerator.MoveNext() && !_coroutines[i].MoveNext())
+                    {
+                        _coroutines.RemoveAt(i);
+                        _waitTimers.RemoveAt(i);
+                    }
+
+                    continue;
+                }
+
                 // Examples of `AsyncOperation`:
                 // `ResourceRequest`, `AssetBundleRequest`
                 // and `AssetBundleCreateRequest`.
