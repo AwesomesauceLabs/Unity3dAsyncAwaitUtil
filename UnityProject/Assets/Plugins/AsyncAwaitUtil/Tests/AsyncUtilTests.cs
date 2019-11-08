@@ -18,7 +18,7 @@ namespace UnityAsyncAwaitUtil
         public static IEnumerator RunAsyncFromCoroutineTest()
         {
             Debug.Log("Waiting 1 second...");
-            yield return new WaitForSeconds(1.0f);
+            yield return new SafeWaitForSeconds(1.0f);
             Debug.Log("Waiting 1 second again...");
             yield return RunAsyncFromCoroutineTest2().AsIEnumerator();
             Debug.Log("Done");
@@ -43,7 +43,7 @@ namespace UnityAsyncAwaitUtil
         private static async Task RunMultipleThreadsTestAsyncWait()
         {
             PrintCurrentThreadContext("RunMultipleThreadsTestAsyncWait1");
-            await new WaitForSeconds(1.0f);
+            await new SafeWaitForSeconds(1.0f);
             PrintCurrentThreadContext("RunMultipleThreadsTestAsyncWait2");
         }
 
@@ -55,7 +55,7 @@ namespace UnityAsyncAwaitUtil
 
         private static async Task RunAsyncFromCoroutineTest2()
         {
-            await new WaitForSeconds(1.0f);
+            await new SafeWaitForSeconds(1.0f);
         }
 
         public static async Task RunWwwAsync()
@@ -92,13 +92,13 @@ namespace UnityAsyncAwaitUtil
 
         private static async Task NestedRunAsync()
         {
-            await new WaitForSeconds(1);
+            await new SafeWaitForSeconds(1);
             throw new Exception("foo");
         }
 
         private static async Task WaitThenThrowException()
         {
-            await new WaitForSeconds(1.5f);
+            await new SafeWaitForSeconds(1.5f);
             throw new Exception("asdf");
         }
 
@@ -153,7 +153,7 @@ namespace UnityAsyncAwaitUtil
         private static IEnumerator WaitThenThrowNested()
         {
             Debug.Log("Waiting 1 second...");
-            yield return new WaitForSeconds(1.0f);
+            yield return new SafeWaitForSeconds(1.0f);
             throw new Exception("zxcv");
         }
 
@@ -195,7 +195,7 @@ namespace UnityAsyncAwaitUtil
 
         private static IEnumerator WaitABit()
         {
-            yield return new WaitForSeconds(1.5f);
+            yield return new SafeWaitForSeconds(1.5f);
         }
 
         public static async Task RunReturnValueTestAsync()
@@ -207,14 +207,14 @@ namespace UnityAsyncAwaitUtil
 
         private static async Task<string> GetValueExampleAsync()
         {
-            await new WaitForSeconds(1.0f);
+            await new SafeWaitForSeconds(1.0f);
             return "asdf";
         }
 
         public static async Task RunAwaitSecondsTestAsync()
         {
             Debug.Log("Waiting 1 second...");
-            await new WaitForSeconds(1.0f);
+            await new SafeWaitForSeconds(1.0f);
             Debug.Log("Done!");
         }
     }
